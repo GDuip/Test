@@ -36,8 +36,8 @@
     sliderValueDisplay.textContent = slider.value;
   });
 
-  // --- Dynamic and Heuristic Extension Detection ---
-  const getCommunityExtensionIDs = async () => {
+ // --- Dynamic and Heuristic Extension Detection ---
+  const detetgetCommunityExtensionIDs = async () => {
     // In a real application, this would fetch from a remote source
     return [
       "joflmkccibkooplaeoinecjbmdebglab", // Securly
@@ -101,45 +101,29 @@
         "Impero Backdrop": "chrome-extension://jjpmjccpemllnmgiaojaocgnakpmfgjg/licenses.html",
         "Mobile Guardian": "chrome-extension://fgmafhdohjkdhfaacgbgclmfgkgokgmb/block.html",
         "NetSupport School Student": "chrome-extension://gcjpefhffmcgplgklffgbebganmhffje/_locales/lt/messages.json",
-        "Lightspeed Alert Agent": "chrome-extension://gcjpefhffmcgplgklffgbebganmhffje/_locales/lt/main.js",
+         "Lightspeed Alert Agent": "chrome-extension://gcjpefhffmcgplgklffgbebganmhffje/_locales/lt/main.js",
         "Lightspeed Alert Agent 2": "chrome-extension://gcjpefhffmcgplgklffgbebganmhffje/_locales/lt/in_page.js",
         "Lockdown Browser": "chrome-extension://fogjeanjfbiombghnmkmmophfeccjdki/manifest.json",
         "Linewize Filter": "chrome-extension://ifinpabiejbjobcphhaomiifjibpkjlf/background/assets/pages/default-blocked.html",
         "Borderless Classroom Student": "chrome-extension://kdpgkligilplaanoablcpjahjjeghcl/pages/blockPage.html",
-      ];
-  };
+      };
+    
+      for (const key in extensions) {
+        if (extensions.hasOwnProperty(key)) {
+          const option = document.createElement("option");
+          option.value = extensions[key];
+          option.text = key;
+          selectElement.appendChild(option);
+        }
+      }
+    }
+    
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        populateSelectOptions()
+      });
 
-  
-  const detectExtension = async (extensionID) => {
-    const potentialFiles = [
-      `chrome-extension://${extensionID}/manifest.json`,
-      `chrome-extension://${extensionID}/background.js`,
-      `chrome-extension://${extensionID}/content.js`,
-      `chrome-extension://${extensionID}/icon.png`,
-      `chrome-extension://${extensionID}/icon-128.png`,
-      `chrome-extension://${extensionID}/blocked.html`,
-      `chrome-extension://${extensionID}/pages/blockPage.html`,
-      `chrome-extension://${extensionID}/youtube_injection.js`,
-      `chrome-extension://${extensionID}/img/ckauth19x.png`,
-      `chrome-extension://${extensionID}/assets/icon-classroom-128.png`,
-      `chrome-extension://${extensionID}/resources/options.js`,
-      `chrome-extension://${extensionID}/image/allow_icon/shield_green_128x128.png`,
-      `chrome-extension://${extensionID}/images/gopher-buddy_128x128_color.png`,
-      `chrome-extension://${extensionID}/models/model.json`,
-      `chrome-extension://${extensionID}/licenses.html`,
-      `chrome-extension://${extensionID}/block.html`,
-      `chrome-extension://${extensionID}/_locales/lt/messages.json`,
-      `chrome-extension://${extensionID}/_locales/lt/main.js`,
-      `chrome-extension://${extensionID}/_locales/lt/in_page.js`,
-      `chrome-extension://${extensionID}/restricted.html`,
-      `chrome-extension://${extensionID}/js/wasm_exec.js`,
-      `chrome-extension://${extensionID}/fonts/Metropolis.css`,
-      `chrome-extension://${extensionID}/background/assets/pages/default-blocked.html`,
-      `chrome-extension://${extensionID}/notfound.html`,
-      `chrome-extension://${extensionID}/pages/message-page.html`,
-    ];
-
-    let foundCount = 0;
+let foundCount = 0;
     for (const file of potentialFiles) {
       try {
         const response = await fetch(file, {
