@@ -36,8 +36,8 @@
     sliderValueDisplay.textContent = slider.value;
   });
 
- // --- Dynamic and Heuristic Extension Detection ---
-  const detetgetCommunityExtensionIDs = async () => {
+  // --- Dynamic and Heuristic Extension Detection ---
+  const detectExtensionIDs = async () => {
     // In a real application, this would fetch from a remote source
     return [
       "joflmkccibkooplaeoinecjbmdebglab", // Securly
@@ -101,27 +101,13 @@
         "Impero Backdrop": "chrome-extension://jjpmjccpemllnmgiaojaocgnakpmfgjg/licenses.html",
         "Mobile Guardian": "chrome-extension://fgmafhdohjkdhfaacgbgclmfgkgokgmb/block.html",
         "NetSupport School Student": "chrome-extension://gcjpefhffmcgplgklffgbebganmhffje/_locales/lt/messages.json",
-         "Lightspeed Alert Agent": "chrome-extension://gcjpefhffmcgplgklffgbebganmhffje/_locales/lt/main.js",
+        "Lightspeed Alert Agent": "chrome-extension://gcjpefhffmcgplgklffgbebganmhffje/_locales/lt/main.js",
         "Lightspeed Alert Agent 2": "chrome-extension://gcjpefhffmcgplgklffgbebganmhffje/_locales/lt/in_page.js",
         "Lockdown Browser": "chrome-extension://fogjeanjfbiombghnmkmmophfeccjdki/manifest.json",
         "Linewize Filter": "chrome-extension://ifinpabiejbjobcphhaomiifjibpkjlf/background/assets/pages/default-blocked.html",
         "Borderless Classroom Student": "chrome-extension://kdpgkligilplaanoablcpjahjjeghcl/pages/blockPage.html",
-      };
-    
-      for (const key in extensions) {
-        if (extensions.hasOwnProperty(key)) {
-          const option = document.createElement("option");
-          option.value = extensions[key];
-          option.text = key;
-          selectElement.appendChild(option);
-        }
-      }
-    }
-    
-    
-    document.addEventListener('DOMContentLoaded', () => {
-        populateSelectOptions()
-      });
+      ];
+  };
 
 let foundCount = 0;
     for (const file of potentialFiles) {
